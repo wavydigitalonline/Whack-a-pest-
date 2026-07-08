@@ -89,14 +89,12 @@
   if (year) year.textContent = new Date().getFullYear();
 })();
 
-/* ---------- quote form -> Web3Forms ---------- */
+/* ---------- quote form -> opens a pre-filled email ---------- */
 (function quoteForm() {
   var form = document.getElementById("quote-form");
   var status = document.getElementById("quote-status");
   var submitBtn = document.getElementById("quote-submit");
   if (!form || !status || !submitBtn) return;
-
-  var defaultBtnHTML = submitBtn.innerHTML;
 
   function showStatus(message, isError) {
     status.textContent = message;
@@ -104,45 +102,31 @@
     status.classList.remove("hidden");
   }
 
-  form.addEventListener("submit", async function (e) {
+  form.addEventListener("submit", function (e) {
     e.preventDefault();
 
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = "Sending...";
-    status.classList.add("hidden");
+    var data = Object.fromEntries(new FormData(form).entries());
 
-    var formData = new FormData(form);
-    var payload = Object.fromEntries(formData.entries());
+    var subject = "Quote request from " + (data.name || "website visitor");
 
-    try {
-      var response = await fetch("https://api.web3forms.com/submit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+    var body =
+      "Name: " + (data.name || "-") +
+      "\nPhone: " + (data.phone || "-") +
+      "\nEmail: " + (data.email || "-") +
+      "\nProperty Type: " + (data.property_type || "-") +
+      "\nPest Problem: " + (data.pest_problem || "-") +
+      "\nMessage: " + (data.message || "-");
 
-      var result = await response.json();
+    var mailtoLink =
+      "mailto:whackapest@zohomail.com" +
+      "?subject=" + encodeURIComponent(subject) +
+      "&body=" + encodeURIComponent(body);
 
-      if (result.success) {
-        showStatus(
-          "Thanks — we've got your request and will be in touch shortly, usually the same day.",
-          false
-        );
-        form.reset();
-      } else {
-        throw new Error(result.message || "Something went wrong.");
-      }
-    } catch (err) {
-      showStatus(
-        "Something went wrong sending that. Please WhatsApp or call us directly — we don't want you to miss out.",
-        true
-      );
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = defaultBtnHTML;
-    }
+    window.location.href = mailtoLink;
+
+    showStatus(
+      "Opening your email app to send this through — if nothing opens, WhatsApp or call us directly.",
+      false
+    );
   });
 })();
